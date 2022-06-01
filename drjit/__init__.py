@@ -292,3 +292,70 @@ def safe_acos(a):
         alt = acos(clip(a, -one_minus_epsilon(a), one_minus_epsilon(a)))
         result = replace_grad(result, alt)
     return result
+
+
+def meshgrid(*args, indexing='xy'):
+    r'''
+    Creates a grid coordinates based on the coordinates contained in the
+    provided one-dimensional arrays.
+
+    The indexing keyword argument allows this function to support both matrix
+    and Cartesian indexing conventions. If given the string 'ij', it will return
+    a grid coordinates with matrix indexing. If given 'xy', it will return a
+    grid coordinates with Cartesian indexing.
+
+    .. codeblock::
+
+        import drjit as dr
+
+        x, y = dr.meshgrid(
+            dr.arange(dr.llvm.UInt, 4),
+            dr.arange(dr.llvm.UInt, 4)
+        )
+
+        # x = [0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
+        # y = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3]
+
+    Args:
+        args (drjit.ArrayBase): Dr.Jit one-dimensional coordinate arrays
+
+        indexing (str): Specifies the indexing conventions
+
+    Returns:
+        tuple: Grid coordinates
+
+    '''
+    if indexing != "ij" and indexing != "xy":
+        raise Exception("meshgrid(): 'indexing' argument must equal"
+                        " 'ij' or 'xy'!")
+
+    if len(args) == 0:
+        return ()
+    elif len(args) == 1:
+        return args[0]
+
+    t = type(args[0])
+    for v in args:
+        if size_v(v) != Dynamic or \
+           depth_v(v) != 1 or type(v) is not t:
+            raise Exception("meshgrid(): consistent 1D dynamic arrays expected!")
+
+    size = prod((len(v) for v in args))
+    index = arange(uint32_array_t(t), size)
+
+    result = []
+
+    # This seems non-symmetric but is necessary to be consistent with NumPy
+    if indexing == "xy":
+        args = (args[1], args[0], *args[2:])
+
+    for v in args:
+        size //= len(v)
+        index_v = index // size
+        index = index - index_v * size
+        result.append(gather(t, v, index_v))
+
+    if indexing == "xy":
+        result[0], result[1] = result[1], result[0]
+
+    return tuple(result)

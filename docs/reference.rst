@@ -49,6 +49,7 @@ Miscellaneous operations
 
 .. autofunction:: shape
 .. autofunction:: slice_index
+.. autofunction:: meshgrid
 
 Just-in-time compilation
 ------------------------

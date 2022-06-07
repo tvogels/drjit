@@ -2049,8 +2049,8 @@ static const char *doc_set_grad_enabled =R"(
 Enable or disable gradient tracking on the provided variables.
 
 Args:
-    *args (tuple): A variable-length list of Dr.Jit array instances,
-        :ref:`custom data structures <custom-struct>`, sequences, or mappings.
+    arg (object): An arbitrary Dr.Jit array, tensor,
+        :ref:`custom data structure <custom-struct>`, sequence, or mapping.
 
     value (bool): Defines whether gradient tracking should be enabled or
         disabled.
@@ -2266,7 +2266,7 @@ Args:
     arg (object): A Dr.Jit differentiable array instance.
 
     flags (ADFlag | int): flags to control what should and should not be
-    destructed during the traversal.
+    destructed during the traversal. The default value is ``ADFlag.Default``.
 )";
 
 static const char *doc_forward =R"(
@@ -2284,7 +2284,7 @@ Args:
     arg (object): A Dr.Jit differentiable array instance.
 
     flags (ADFlag | int): flags to control what should and should not be
-    destructed during the traversal.
+    destructed during the traversal. The default value is ``ADFlag.Default``.
 )";
 
 static const char *doc_forward_to =R"(
@@ -2304,7 +2304,7 @@ Args:
         :ref:`custom data structure <custom-struct>`, sequences, or mapping.
 
     flags (ADFlag | int): flags to control what should and should not be
-    destructed during the traversal.
+    destructed during the traversal. The default value is ``ADFlag.Default``.
 
 Returns:
     object: the gradient value associated to the output variables.
@@ -2320,7 +2320,7 @@ Args:
     arg (object): A Dr.Jit differentiable array instance.
 
     flags (ADFlag | int): flags to control what should and should not be
-    destructed during the traversal.
+    destructed during the traversal. The default value is ``ADFlag.Default``.
 )";
 
 static const char *doc_backward =R"(
@@ -2335,7 +2335,7 @@ Args:
     arg (object): A Dr.Jit differentiable array instance.
 
     flags (ADFlag | int): flags to control what should and should not be
-    destructed during the traversal.
+    destructed during the traversal. The default value is ``ADFlag.Default``.
 )";
 
 static const char *doc_backward_to =R"(
@@ -2355,7 +2355,7 @@ Args:
         :ref:`custom data structure <custom-struct>`, sequences, or mapping.
 
     flags (ADFlag | int): flags to control what should and should not be
-    destructed during the traversal.
+    destructed during the traversal. The default value is ``ADFlag.Default``.
 
 Returns:
     object: the gradient value associated to the output variables.
@@ -2526,7 +2526,6 @@ Context manager to temporarily isolate outside world from AD traversals.
 Dr.Jit provides isolation boundaries to postpone AD traversals steps leaving a
 specific scope. For instance this function is used internally to implement
 differentiable loops and polymorphic calls.
-
 )";
 
 static const char *doc_custom =R"(

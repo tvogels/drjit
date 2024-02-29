@@ -157,6 +157,10 @@ def allclose(
 
         cond = abs(diff) <= abs(b) * rtol_c + atol_c
 
+        # plus/minus infinity
+        if is_float_v(a):
+            cond |= all(a == b)
+
         if equal_nan:
             cond |= isnan(a) & isnan(b)
 
@@ -577,6 +581,51 @@ def diag(arg, /):
         return result
     else:
         raise Exception('drjit.diag(): unsupported type!')
+
+
+def identity(dtype, size=1):
+    '''
+    Return the identity array of the desired type and size
+
+    This function can create identity instances of various types. In
+    particular, ``dtype`` can be:
+
+    - A Dr.Jit matrix type (like :py:class:`drjit.cuda.Matrix4f`).
+
+    - A Dr.Jit complex type (like :py:class:`drjit.cuda.Quaternion4f`).
+
+    - Any other Dr.Jit array type. In this case this function is equivalent to ``full(dtype, 1, size)``
+
+    - A scalar Python type like ``int``, ``float``, or ``bool``. The ``size``
+      parameter is ignored in this case.
+
+    Args:
+        dtype (type): Desired Dr.Jit array type, Python scalar type, or
+          :ref:`custom data structure <custom-struct>`.
+
+        value (object): An instance of the underlying scalar type
+          (``float``/``int``/``bool``, etc.) that will be used to initialize the
+          array contents.
+
+        size (int): Size of the desired array | matrix
+
+    Returns:
+        object: The identity array of type ``dtype`` of size ``size``
+    '''
+    if is_special_v(dtype):
+        result = zeros(dtype, size)
+
+        if is_complex_v(dtype) or is_quaternion_v(dtype):
+            result.real = identity(value_t(dtype), size)
+        elif is_matrix_v(dtype):
+            one = identity(type(result[0, 0]), size)
+            for i in range(size_v(dtype)):
+                result[i, i] = one
+        return result
+    elif is_array_v(dtype):
+        return full(dtype, 1, size)
+    else:
+        return dtype(1)
 
 
 def trace(arg, /):

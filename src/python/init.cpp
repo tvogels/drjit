@@ -639,9 +639,11 @@ int tp_init_tensor(PyObject *self, PyObject *args, PyObject *kwds) noexcept {
         nb::object args_2;
         if (!shape) {
             nb::object flat;
-            if (nb::ndarray_check(array)) {
-                // Try to construct from an instance created by another
-                // array programming framework
+            if (!PyCapsule_CheckExact(array) &&
+                (nb::hasattr(nb::handle(array), "__dlpack__") ||
+                 PyObject_CheckBuffer(array))) {
+                //  Try to construct from an instance created by another
+                //  array programming framework
                 flat = import_ndarray(s, array, &shape_vec);
             } else {
                 // Infer the shape of an arbitrary data structure & flatten it

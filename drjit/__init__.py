@@ -672,7 +672,7 @@ def rotate(dtype, axis, angle):
 
 
 def frob(a, /):
-    r'''
+    '''
     frob(arg, /)
     Returns the squared Frobenius norm of the provided Dr.Jit matrix.
 

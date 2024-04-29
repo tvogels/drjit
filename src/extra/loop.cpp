@@ -42,8 +42,11 @@ static bool ad_loop_symbolic(JitBackend backend, const char *name,
     bool symbolic = jit_flag(JitFlag::SymbolicScope);
 
     try {
-        scoped_record record_guard(backend);
+        scoped_isolation_boundary isolation_guard_;
+        scoped_record record_guard_(backend);
+
         scoped_isolation_boundary isolation_guard;
+        scoped_record record_guard(backend);
 
         // Rewrite the loop state variables
         JitVar loop = JitVar::steal(jit_var_loop_start(
@@ -116,6 +119,9 @@ static bool ad_loop_symbolic(JitBackend backend, const char *name,
             // Re-record, discard postponed nodes on the AD graph
             isolation_guard.reset();
         } while (true);
+
+        isolation_guard_.disarm();
+        record_guard_.disarm();
     } catch (...) {
         // Restore all loop state variables to their original state
         try {

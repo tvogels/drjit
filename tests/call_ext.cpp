@@ -31,10 +31,12 @@ struct Sampler {
 
 template <typename Float> struct Base : nb::intrusive_base {
     using Mask = dr::mask_t<Float>;
+    using UInt32 = dr::uint32_array_t<Float>;
 
     virtual std::pair<Float, Float> f(Float x, Float y) = 0;
     virtual std::pair<Float, Float> f_masked(const std::pair<Float, Float> &xy, Mask active) = 0;
     virtual Float g(Float, Mask) = 0;
+    virtual Float nested(Float x, UInt32 s) = 0;
     virtual void dummy() = 0;
     virtual float scalar_getter() = 0;
     virtual Float opaque_getter() = 0;
@@ -48,12 +50,12 @@ template <typename Float> struct Base : nb::intrusive_base {
             jit_registry_put(dr::backend_v<Float>, "Base", this);
     }
 
-
     virtual ~Base() { jit_registry_remove(this); }
 };
 
 template <typename Float> struct A : Base<Float> {
     using Mask = dr::mask_t<Float>;
+    using UInt32 = dr::uint32_array_t<Float>;
 
     virtual std::pair<Float, Float> f(Float x, Float y) override {
         return { 2 * y, -x };
@@ -67,6 +69,10 @@ template <typename Float> struct A : Base<Float> {
 
     virtual Float g(Float, Mask) override {
         return value;
+    }
+
+    virtual Float nested(Float x, UInt32 /*s*/) override {
+        return x;
     }
 
     virtual std::pair<Sampler<Float> *, Float> sample(Sampler<Float> *s) override {
@@ -89,6 +95,7 @@ template <typename Float> struct A : Base<Float> {
 
 template <typename Float> struct B : Base<Float> {
     using Mask = dr::mask_t<Float>;
+    using UInt32 = dr::uint32_array_t<Float>;
 
     virtual std::pair<Float, Float> f(Float x, Float y) override {
         return { 3 * y, x };
@@ -102,6 +109,12 @@ template <typename Float> struct B : Base<Float> {
 
     virtual Float g(Float x, Mask) override {
         return value*x;
+    }
+
+    virtual Float nested(Float x, UInt32 s) override {
+        using BaseArray = dr::replace_value_t<Float, Base<Float>*>;
+        BaseArray self = dr::reinterpret_array<BaseArray>(s);
+        return self->nested(x,s);
     }
 
     virtual std::pair<Sampler<Float> *, Float> sample(Sampler<Float> *s) override {
@@ -127,6 +140,7 @@ DRJIT_CALL_TEMPLATE_BEGIN(Base)
     DRJIT_CALL_METHOD(f_masked)
     DRJIT_CALL_METHOD(dummy)
     DRJIT_CALL_METHOD(g)
+    DRJIT_CALL_METHOD(nested)
     DRJIT_CALL_METHOD(sample)
     DRJIT_CALL_GETTER(scalar_getter)
     DRJIT_CALL_GETTER(opaque_getter)
@@ -143,6 +157,7 @@ void bind(nb::module_ &m) {
     using AT = A<Float>;
     using BT = B<Float>;
     using Mask = dr::mask_t<Float>;
+    using UInt32 = dr::uint32_array_t<Float>;
     using Sampler = ::Sampler<Float>;
 
     auto sampler = nb::class_<Sampler>(m, "Sampler")
@@ -156,6 +171,7 @@ void bind(nb::module_ &m) {
         .def("f", &BaseT::f)
         .def("f_masked", &BaseT::f_masked)
         .def("g", &BaseT::g)
+        .def("nested", &BaseT::nested)
         .def("sample", &BaseT::sample);
 
     nb::class_<AT, BaseT>(m, "A")
@@ -186,6 +202,9 @@ void bind(nb::module_ &m) {
         .def("g",
              [](BaseArray &self, Float x, Mask m) { return self->g(x, m); },
              "x"_a, "mask"_a = true)
+        .def("nested",
+             [](BaseArray &self, Float x, UInt32 s) { return self->nested(x, s); },
+             "x"_a, "s"_a)
         .def("dummy", [](BaseArray &self) { return self->dummy(); })
         .def("scalar_getter", [](BaseArray &self, Mask m) {
                 return self->scalar_getter(m);

@@ -831,3 +831,26 @@ def test15_dispatch_scalar_mask(t, symbolic):
         xo, yo = dr.dispatch(c, my_func, (xi, yi), active=m)
     assert dr.all(xo == t(10, 12, 16, 21, 24))
     assert dr.all(yo == t(-1, -2, -8, 3, 4))
+
+@pytest.mark.parametrize("symbolic", [True, False])
+@pytest.test_arrays('float32,is_diff,shape=(*)')
+def test16_nested_call(t, symbolic):
+    pkg = get_pkg(t)
+
+    A, B, Base, BasePtr = pkg.A, pkg.B, pkg.Base, pkg.BasePtr
+    a, b = A(), B()
+
+    U = dr.uint32_array_t(t)
+    xi = t(1, 2, 8, 3, 4)
+    yi = dr.reinterpret_array(U, BasePtr(a, a, a, a, a))
+
+    def my_func(self, xi, yi):
+        return self.nested(xi, yi)
+
+    c = BasePtr(a, a, a, b, b)
+
+    with dr.scoped_set_flag(dr.JitFlag.SymbolicCalls, symbolic):
+        xo = dr.dispatch(c, my_func, xi, yi)
+
+    assert dr.all(xo == xi)
+

@@ -458,14 +458,14 @@ struct DRJIT_TRIVIAL_ABI JitArray
 
     template <size_t N, typename Index, typename Mask>
     static Array<JitArray, N> gather_packet_(const JitArray &src, const Index &index,
-                                             const Mask &mask, ReduceMode /* mode */) {
+                                             const Mask &mask, ReduceMode mode) {
         if constexpr (N & (N-1)) {
-            return Base::gather_packet_(src, index, mask);
+            return Base::template gather_packet_<N>(src, index, mask, mode);
         } else {
             static_assert(
                 std::is_same_v<detached_t<Mask>, detached_t<mask_t<JitArray>>>);
             uint32_t tmp[N];
-            jit_var_gather_packet(src.index(), index.index(), mask.index(), tmp);
+            jit_var_gather_packet(N, src.index(), index.index(), mask.index(), tmp);
 
             Array<JitArray, N> result;
             for (size_t i = 0; i < N; ++i)

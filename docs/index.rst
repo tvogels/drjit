@@ -27,8 +27,8 @@ public API.
 
    changelog
    what
-   overview
    basics
+   eval
    types
    cflow
    autodiff

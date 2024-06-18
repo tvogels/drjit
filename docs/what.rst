@@ -290,7 +290,7 @@ this documentation explain how Dr.Jit generalizes to bigger programs:
 2. **Control flow**: how to trace operations such as ``while`` loops, ``if``
    statements, and polymorphic indirection.
 
-3. **Variable valuation**: Certain operations (such as printing the contents of
+3. **Evaluation**: Certain operations (such as printing the contents of
    an array) cannot be traced and trigger the *evaluation* of a variable. We
    review what steps require evaluation, and how to tune this process.
 

@@ -74,7 +74,7 @@ Element access
 --------------
 
 Use the default ``array[index]`` syntax to read/write array entries. Nested
-Static 1-4D arrays further expose equivalent ``.x`` / ``.y`` / ``.z`` / ``.w``
+static 1-4D arrays further expose equivalent ``.x`` / ``.y`` / ``.z`` / ``.w``
 members:
 
 .. code-block:: python
@@ -83,19 +83,23 @@ members:
    a.x += a.z + a[1]
 
 Static 1-4D arrays also support `swizzling
-<https://en.wikipedia.org/wiki/Swizzling_(computer_graphics)>`__, which arbitrarily reorders elements:
+<https://en.wikipedia.org/wiki/Swizzling_(computer_graphics)>`__, which
+arbitrarily reorders elements:
 
 .. code-block:: python
 
    a.xy = a.xx + a.yx
 
+Arithmetic operations
+---------------------
 
+Dr.Jit arrays automatically broadcast and undergo implicit type promotion in
+arithmetic expressions.
 
-.. code-block:: python
+.. code-block:: pycon
 
-   print(a.shape)
-   (3, 2)
-
+   >>> abs(Float(-1.25, 2) + UInt32(1))
+   [0.25, 3]
 
 
 The system provides standard transcendental functions.

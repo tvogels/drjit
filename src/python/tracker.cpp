@@ -319,7 +319,7 @@ bool VariableTracker::Impl::traverse(Context &ctx, nb::handle h) {
                   ctx.label.c_str(), nb::inst_name(prev).c_str(),
                   nb::type_name(tp).c_str());
 
-    uint32_t changed = false;
+    bool changed = false;
 
     if (is_drjit_type(tp)) {
         const ArraySupplement &s = supp(tp);
@@ -338,7 +338,7 @@ bool VariableTracker::Impl::traverse(Context &ctx, nb::handle h) {
 
             for (size_t i = 0; i < size; ++i) {
                 ScopedAppendLabel guard(ctx, "[", i, "]");
-                changed |= (uint32_t)traverse(ctx, nb::steal(s.item(h.ptr(), (Py_ssize_t) i)));
+                changed |= traverse(ctx, nb::steal(s.item(h.ptr(), (Py_ssize_t) i)));
             }
         } else if (s.index) {
             uint64_t idx = s.index(inst_ptr(h));
@@ -475,21 +475,21 @@ bool VariableTracker::Impl::traverse(Context &ctx, nb::handle h) {
         size_t size = size_valid(v, ctx.label, h, nb::len(t));
         for (size_t i = 0; i < size; ++i) {
             ScopedAppendLabel guard(ctx, "[", i, "]");
-            changed |= (uint32_t)traverse(ctx, t[i]);
+            changed |= traverse(ctx, t[i]);
         }
     } else if (tp.is(&PyList_Type)) {
         nb::list l = nb::borrow<nb::list>(h);
         size_t size = size_valid(v, ctx.label, h, nb::len(l));
         for (size_t i = 0; i < size; ++i) {
             ScopedAppendLabel guard(ctx, "[", i, "]");
-            changed |= (uint32_t)traverse(ctx, l[i]);
+            changed |= traverse(ctx, l[i]);
         }
     } else if (tp.is(&PyDict_Type)) {
         nb::dict d = nb::borrow<nb::dict>(h);
         size_valid(v, ctx.label, h, nb::len(d));
         for (nb::handle kv: d.items()) {
             ScopedAppendLabel guard(ctx, "[", nb::repr(kv[0]).c_str(), "]");
-            changed |= (uint32_t)traverse(ctx, kv[1]);
+            changed |= traverse(ctx, kv[1]);
         }
     } else {
         nb::object traverse_cb = nb::getattr(
@@ -499,7 +499,7 @@ bool VariableTracker::Impl::traverse(Context &ctx, nb::handle h) {
         if (nb::dict ds = get_drjit_struct(tp); ds.is_valid()) {
             for (auto [k, _] : ds) {
                 ScopedAppendLabel guard(ctx, ".", nb::str(k).c_str());
-                changed |= (uint32_t)traverse(ctx, nb::getattr(h, k));
+                changed |= traverse(ctx, nb::getattr(h, k));
             }
         } else if (traverse_cb.is_valid()) {
             ScopedAppendLabel guard(ctx, "._traverse_cb()");
@@ -510,7 +510,7 @@ bool VariableTracker::Impl::traverse(Context &ctx, nb::handle h) {
             for (nb::handle field : df) {
                 nb::object k = field.attr(DR_STR(name));
                 ScopedAppendLabel guard(ctx, ".", nb::str(k).c_str());
-                changed |= (uint32_t)traverse(ctx, nb::getattr(h, k));
+                changed |= traverse(ctx, nb::getattr(h, k));
             }
         } else if (strict && !new_variable && !h.is(prev)) {
             bool is_same = false;
